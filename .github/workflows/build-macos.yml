@@ -1,0 +1,23 @@
+name: Build macOS app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    # macOS 26 + Xcode 26 SDK, so the panel gets real Liquid Glass.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+      - run: flutter build macos --release
+      - run: ditto -c -k --keepParent build/macos/Build/Products/Release/climate_bar.app climate_bar.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: climate_bar
+          path: climate_bar.zip
