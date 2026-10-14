@@ -31,10 +31,13 @@ class MainFlutterWindow: NSWindow {
   }
 
   // Real Liquid Glass on macOS 26 (needs the Xcode 26 SDK / Swift 6.2), native blur otherwise.
+  // Tuning knob while we compare looks: `defaults write com.example.climateBar glassStyle clear|regular|blur`
   private func makeBackground(around content: NSView) -> NSView {
+    let style = UserDefaults.standard.string(forKey: "glassStyle") ?? "clear"
     #if compiler(>=6.2)
-    if #available(macOS 26.0, *) {
+    if #available(macOS 26.0, *), style != "blur" {
       let glass = NSGlassEffectView()
+      glass.style = style == "regular" ? .regular : .clear
       glass.cornerRadius = 14
       glass.contentView = content
       return glass
