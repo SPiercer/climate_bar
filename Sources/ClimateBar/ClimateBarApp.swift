@@ -1,6 +1,5 @@
 import SwiftUI
 
-@main
 struct ClimateBarApp: App {
   @State private var store = Store()
 
@@ -23,26 +22,91 @@ struct ClimateBarApp: App {
   }
 }
 
-// Placeholder state until the Midea protocol is wired in.
 struct ACUnit: Identifiable {
-  let id: String
+  let id: String  // IP
   var name: String
-  var online: Bool
+  var online: Bool?  // nil until the first reply
   var on = false
   var target = 24.0
-  var indoor = 28.0
+  var indoor: Double?
   var fan = "Auto"
 }
 
-@Observable
+@MainActor @Observable
 final class Store {
-  var units = [
-    ACUnit(id: "192.168.1.101", name: "Office", online: true, on: true),
-    ACUnit(id: "192.168.1.100", name: "AC 2", online: false),
-  ]
+  var units: [ACUnit] = []
   var selected = 0
+  var error: String?
+  @ObservationIgnored private var devices: [String: MideaAC] = [:]
+  @ObservationIgnored private var pending: [String: Task<Void, Never>] = [:]
 
-  var current: ACUnit { units[selected] }
+  init() {
+    load()
+    // Keep the panel and menu bar label in sync with changes made from the remote or the official app.
+    Task {
+      while true {
+        refreshAll()
+        try? await Task.sleep(for: .seconds(30))
+      }
+    }
+  }
+
+  /// No saved ACs yet -> the panel shows onboarding instead of an error.
+  var needsOnboarding: Bool { units.isEmpty }
+
+  /// (Re)load the saved devices; a missing file just means "not onboarded yet".
+  func load() {
+    guard let configs = try? Devices.load() else { units = []; devices = [:]; return }
+    units = configs.map { ACUnit(id: $0.ip, name: $0.name) }
+    devices = Dictionary(uniqueKeysWithValues: configs.map { ($0.ip, MideaAC($0)) })
+    error = nil
+  }
+
+  var current: ACUnit {
+    units.indices.contains(selected) ? units[selected] : ACUnit(id: "", name: "No ACs", online: false)
+  }
+
+  func refreshAll() {
+    for unit in units { Task { await refresh(unit.id) } }
+  }
+
+  func refresh(_ id: String) async {
+    // A command in flight owns the connection (the AC takes one client at a time) and will report back itself.
+    guard let device = devices[id], pending[id] == nil else { return }
+    let status = try? await device.status()
+    guard pending[id] == nil, let i = units.firstIndex(where: { $0.id == id }) else { return }
+    if let status { apply(status, at: i) } else { units[i].online = false }
+  }
+
+  /// Sends the unit's current panel state to the AC. Rapid changes (dragging the dial) collapse into one command.
+  func push(_ id: String) {
+    guard let device = devices[id], let unit = units.first(where: { $0.id == id }) else { return }
+    pending[id]?.cancel()
+    pending[id] = Task {
+      try? await Task.sleep(for: .milliseconds(500))
+      guard !Task.isCancelled else { return }
+      let (on, target, fan) = (unit.on, unit.target, unit.fan)
+      let status = try? await device.update {
+        $0.power = on
+        $0.target = target
+        $0.fan = fan
+      }
+      pending[id] = nil
+      if let status, let i = units.firstIndex(where: { $0.id == id }) {
+        apply(status, at: i)
+      } else {
+        await refresh(id)  // failed: show what the AC actually has
+      }
+    }
+  }
+
+  private func apply(_ status: ACStatus, at i: Int) {
+    units[i].online = true
+    units[i].on = status.power
+    units[i].target = status.target
+    units[i].fan = status.fan
+    units[i].indoor = status.indoor
+  }
 }
 
 struct PanelView: View {
@@ -52,8 +116,19 @@ struct PanelView: View {
   private var unit: Binding<ACUnit> { $store.units[store.selected] }
 
   var body: some View {
+    if store.needsOnboarding {
+      OnboardingView(model: OnboardingModel { _ in store.load() })
+    } else {
+      panel
+    }
+  }
+
+  private var panel: some View {
     VStack(alignment: .leading, spacing: 12) {
       Text("ClimateBar").font(.headline)
+      if let error = store.error {
+        Text(error).font(.caption).foregroundStyle(.red)
+      }
       switcher
       card
     }
@@ -81,11 +156,11 @@ struct PanelView: View {
     } label: { index in
       let item = store.units[index]
       HStack(spacing: 6) {
-        Circle().fill(item.online ? Color.green : .secondary).frame(width: 5, height: 5)
+        Circle().fill(item.online == true ? Color.green : .secondary).frame(width: 5, height: 5)
         Text(item.name).fontWeight(index == store.selected ? .semibold : .regular)
-        if !item.online { Image(systemName: "wifi.slash").font(.caption2) }
+        if item.online == false { Image(systemName: "wifi.slash").font(.caption2) }
       }
-      .foregroundStyle(item.online ? .primary : .secondary)
+      .foregroundStyle(item.online == false ? .secondary : .primary)
     }
   }
 
@@ -103,6 +178,7 @@ struct PanelView: View {
         .frame(width: 30)
       glassSegments(Self.fanSpeeds, selected: ac.fan, id: "fan") { speed in
         unit.fan.wrappedValue = speed
+        store.push(ac.id)
       } label: { speed in
         Text(speed).font(.callout).fontWeight(speed == ac.fan ? .semibold : .regular)
       }
@@ -144,13 +220,19 @@ struct PanelView: View {
     let ac = unit.wrappedValue
     return VStack(alignment: .leading, spacing: 14) {
       HStack {
-        Text(ac.online ? (ac.on ? "On" : "Off") : "Offline").font(.headline)
+        Text(ac.online == nil ? "Connecting…" : ac.online == true ? (ac.on ? "On" : "Off") : "Offline").font(.headline)
         Spacer()
         powerButton(ac)
       }
       ACHero(running: ac.on, readout: "\(Int(ac.target))", fan: ac.fan)
       Group {
-        ThermostatDial(target: unit.target, indoor: ac.indoor)
+        ThermostatDial(
+          target: Binding(
+            get: { unit.target.wrappedValue },
+            set: {
+              unit.target.wrappedValue = $0
+              store.push(ac.id)
+            }), indoor: ac.indoor)
         fanControl(ac)
       }
       .disabled(!ac.on)
@@ -158,12 +240,13 @@ struct PanelView: View {
     }
     .padding(16)
     .glassEffect(.clear, in: .rect(cornerRadius: 14))
-    .disabled(!ac.online)
+    .disabled(ac.online != true)
   }
 
   private func powerButton(_ ac: ACUnit) -> some View {
     Button {
       withAnimation(.bouncy) { unit.on.wrappedValue.toggle() }
+      store.push(ac.id)
     } label: {
       Image(systemName: "power")
         .font(.system(size: 15, weight: .semibold))

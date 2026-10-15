@@ -3,7 +3,7 @@ import SwiftUI
 /// Circular glass thermostat: drag around the ring, or use − / + in the gap at the bottom.
 struct ThermostatDial: View {
   @Binding var target: Double
-  let indoor: Double
+  let indoor: Double?
 
   private static let range = 16.0...30.0
   private static let start = 135.0  // degrees, 0 = 3 o'clock, increasing clockwise on screen
@@ -36,7 +36,7 @@ struct ThermostatDial: View {
             Text("\(Int(target))").font(.system(size: 56, weight: .light)).contentTransition(.numericText())
             Text("°C").font(.title3).foregroundStyle(.secondary)
           }
-          Label("\(Int(indoor))° indoors", systemImage: "thermometer.medium")
+          Label("\(indoor.map { String(format: "%.1f", $0) } ?? "–")° indoors", systemImage: "thermometer.medium")
             .font(.caption).foregroundStyle(.secondary)
         }
         HStack(spacing: 36) {

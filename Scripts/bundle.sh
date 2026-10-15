@@ -17,6 +17,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleShortVersionString</key><string>0.1</string>
   <key>LSMinimumSystemVersion</key><string>26.0</string>
   <key>LSUIElement</key><true/>
+  <key>NSLocalNetworkUsageDescription</key><string>ClimateBar talks to your air conditioners on your local network.</string>
 </dict></plist>
 PLIST
 codesign --force --sign - "$APP"

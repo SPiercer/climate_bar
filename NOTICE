@@ -1,0 +1,13 @@
+ClimateBar
+Copyright 2026 SPiercer
+
+Licensed under the Apache License, Version 2.0 (the "License"); see the LICENSE
+file. You may not use this project except in compliance with the License.
+
+---
+
+This product includes software derived from midea-local
+(https://github.com/midea-lan/midea-local), licensed under the Apache License,
+Version 2.0. The LAN protocol implementation in Sources/ClimateBar/Midea.swift
+is a Swift port of that project, and the Python tools (ac.py, ac_direct.py,
+ac_setup.py) build on the `midealocal` package at runtime.
