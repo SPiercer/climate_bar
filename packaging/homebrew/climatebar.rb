@@ -7,8 +7,8 @@
 #   brew install --cask spiercer/tap/climatebar
 #
 cask "climatebar" do
-  version "0.2"
-  sha256 "dea222347094d43a09c0c64f302c294f28beee24bd9c8c0735b2c89db32fa3e1"
+  version "0.3"
+  sha256 "075de565ab62858d597ff812d0ee45512e66debfaa874a193d774d290558f39e"
 
   url "https://github.com/SPiercer/climate_bar/releases/download/v#{version}/ClimateBar-#{version}.zip"
   name "ClimateBar"

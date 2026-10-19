@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.."
 VERSION="${1:-0.1}"
 CASK="packaging/homebrew/climatebar.rb"
 
-./Scripts/bundle.sh                       # builds + signs build/ClimateBar.app
+CLIMATEBAR_VERSION="$VERSION" ./Scripts/bundle.sh   # builds + signs build/ClimateBar.app
 APP=build/ClimateBar.app
 
 # Notarize when a notary profile is configured (see README); otherwise skip and

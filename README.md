@@ -1,24 +1,16 @@
-# ClimateBar
+<div align="center">
+  <img src="docs/icon.png" width="128" alt="ClimateBar icon">
+  <h1>ClimateBar</h1>
+  <p>Control your Midea air conditioners from the macOS menu bar — over your local network.</p>
+</div>
 
-Control your Midea air conditioners from the macOS menu bar — entirely over your
-local network. After a one-time setup, no cloud connection is used.
+ClimateBar speaks the Midea V3 LAN protocol directly (ported from
+[midea-local](https://github.com/midea-lan/midea-local)): a thermostat dial, fan
+control, and on/off, in a SwiftUI menu bar panel with Liquid Glass. After a
+one-time sign-in it talks to your ACs **only over your LAN** — the cloud is never
+contacted again.
 
-ClimateBar speaks the Midea V3 LAN protocol directly (reverse-engineered, ported
-from [midea-local](https://github.com/midea-lan/midea-local)): a thermostat dial,
-fan control, and on/off, in a SwiftUI menu bar panel.
-
-> **Why local?** Midea's protocol-3 units require a per-device `token`/`key` for
-> LAN control. Those are issued by Midea's cloud when you pair the AC in the
-> MSmartHome app. ClimateBar fetches them **once** at setup, then talks to the
-> ACs only over your LAN — you can even firewall the units off the internet
-> afterward.
-
-## Requirements
-
-- macOS 26+ (the panel uses Liquid Glass) with Swift 6.2 toolchain
-- Your ACs on the same Wi-Fi/LAN as your Mac, already paired in the MSmartHome app
-- Python with the [`midealocal`](https://pypi.org/project/midea-local/) package,
-  for the one-time setup (`pipx install midea-local`)
+<!-- Screenshots: drop panel.png and onboarding.png into docs/ and they'll show here. -->
 
 ## Install
 
@@ -26,28 +18,60 @@ fan control, and on/off, in a SwiftUI menu bar panel.
 brew install --cask spiercer/tap/climatebar
 ```
 
-ClimateBar isn't signed with an Apple Developer ID, so the **first** time you
-open it macOS will say it "cannot be verified". Open it once via right-click →
-**Open**, or System Settings → Privacy & Security → **Open Anyway**. After that
-it launches normally.
+Signed and notarized by Apple — it just opens, no Gatekeeper warning. The first
+time it connects, macOS asks to let ClimateBar **"find devices on your local
+network"** — click **Allow**, or it can't reach your ACs.
 
-On first launch the app asks you to sign in with your Midea account, finds your
-ACs on the LAN, and lists them to confirm — then talks to them only over your
-LAN. The cloud is not contacted again.
+Not on Homebrew? Grab the `.zip` from the
+[latest release](https://github.com/SPiercer/climate_bar/releases/latest), unzip,
+and move `ClimateBar.app` to your Applications folder.
+
+## Setup
+
+On first launch the panel shows a sign-in form. Enter your **Midea account**
+(the one you paired the ACs with in the MSmartHome app). ClimateBar then:
+
+1. logs into the Midea cloud **once** to fetch each AC's LAN `token`/`key`,
+2. discovers your ACs on the network,
+3. verifies each key against the actual unit, and saves them locally.
+
+That's it — from then on it's LAN-only. It also **re-scans the LAN periodically**,
+so an AC that reboots onto a new DHCP address or comes back online is picked up
+automatically without re-doing setup.
+
+> **Why a cloud sign-in at all?** Protocol-3 units require a per-device
+> `token`/`key` for LAN control, and Midea only issues those from their cloud at
+> pairing time. ClimateBar fetches them once, then you can firewall the units off
+> the internet entirely.
+
+Tokens and keys live in `~/Library/Application Support/ClimateBar/devices.json`
+(chmod 600) — they're device secrets, never committed, never sent anywhere but
+your ACs.
+
+## Requirements
+
+- macOS 26+ (the panel uses Liquid Glass)
+- Your ACs on the same LAN as your Mac, already paired in the MSmartHome app
 
 ## Build from source
 
 ```sh
-./Scripts/bundle.sh        # builds build/ClimateBar.app (ad-hoc signed)
+./Scripts/bundle.sh        # builds build/ClimateBar.app (signed if a Developer ID cert is present, else ad-hoc)
 open build/ClimateBar.app
 ```
 
-To cut a release and update the Homebrew cask, run `./Scripts/release.sh`.
+> Test with the built **app bundle**, not `swift run` — a bare binary is blocked
+> from the LAN by macOS's Local Network privacy, so connections fail. The bundle
+> gets the permission prompt.
 
-## Command-line tools
+Other scripts: `Scripts/release.sh <version>` cuts a signed+notarized release and
+updates the Homebrew cask; `Scripts/make_icon.sh` regenerates the app icon.
 
-For power users, the Python tools reuse the same local protocol and
-`devices.json` (run `ac_setup.py` instead of the in-app login to generate it):
+## Command-line tools (optional, Python)
+
+Power-user scripts that reuse the same local protocol and `devices.json`. Run
+them with a Python that has [`midealocal`](https://pypi.org/project/midea-local/)
+installed (`pipx install midea-local`):
 
 | Tool | Does |
 |------|------|
@@ -55,15 +79,9 @@ For power users, the Python tools reuse the same local protocol and
 | `ac.py on\|off <ac>` | Power an AC on/off (`<ac>` is a number, IP, or `all`) |
 | `ac.py temp 24 <ac>` | Set target temperature |
 | `ac_direct.py <ip> on\|off\|26` | Send a single raw command to one AC by IP |
+| `ac_setup.py` | Generate `devices.json` from the terminal instead of the in-app login |
 
-Run them with the Python that has `midealocal` installed.
+## Credits
 
-## Security
-
-`devices.json` and `midea-devices.json` hold per-device tokens and keys — treat
-them like passwords. Both are git-ignored and written with `0600` permissions;
-never commit them.
-
-## License
-
-Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Protocol ported from [midea-local](https://github.com/midea-lan/midea-local)
+(see `NOTICE`). Licensed under Apache-2.0.

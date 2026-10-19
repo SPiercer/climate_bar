@@ -4,8 +4,9 @@ set -e
 cd "$(dirname "$0")/.."
 swift build -c release
 APP=build/ClimateBar.app
-rm -rf "$APP" && mkdir -p "$APP/Contents/MacOS"
+rm -rf "$APP" && mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$(swift build -c release --show-bin-path)/ClimateBar" "$APP/Contents/MacOS/"
+cp packaging/ClimateBar.icns "$APP/Contents/Resources/"
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -13,8 +14,9 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleExecutable</key><string>ClimateBar</string>
   <key>CFBundleIdentifier</key><string>com.spiercer.climatebar</string>
   <key>CFBundleName</key><string>ClimateBar</string>
+  <key>CFBundleIconFile</key><string>ClimateBar</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.1</string>
+  <key>CFBundleShortVersionString</key><string>${CLIMATEBAR_VERSION:-0.3}</string>
   <key>LSMinimumSystemVersion</key><string>26.0</string>
   <key>LSUIElement</key><true/>
   <key>NSLocalNetworkUsageDescription</key><string>ClimateBar talks to your air conditioners on your local network.</string>

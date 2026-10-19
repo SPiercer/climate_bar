@@ -42,12 +42,36 @@ final class Store {
 
   init() {
     load()
-    // Keep the panel and menu bar label in sync with changes made from the remote or the official app.
+    // Keep the panel and menu bar label in sync with changes made from the remote or the official app,
+    // and periodically re-scan the LAN so ACs that moved (DHCP) or came online are picked up.
     Task {
+      var cycle = 0
       while true {
+        if cycle % 10 == 0 { await rediscover() }  // on launch, then ~every 5 min
         refreshAll()
+        cycle += 1
         try? await Task.sleep(for: .seconds(30))
       }
+    }
+  }
+
+  /// Re-scan the LAN and move any saved AC to its current IP. Known ACs only —
+  /// a brand-new AC needs its token, which comes from onboarding.
+  func rediscover() async {
+    let found = await Task.detached { Discovery.scan() }.value
+    guard !found.isEmpty, var configs = try? Devices.load() else { return }
+    var changed = false
+    for ac in found {
+      guard let i = configs.firstIndex(where: { $0.device_id == ac.deviceID }), configs[i].ip != ac.ip
+      else { continue }
+      let c = configs[i]
+      configs[i] = DeviceConfig(name: c.name, ip: ac.ip, device_id: c.device_id, token: c.token, key: c.key)
+      changed = true
+    }
+    if changed {
+      try? Devices.save(configs)
+      load()  // rebuild the units + clients at their new IPs
+      refreshAll()
     }
   }
 
