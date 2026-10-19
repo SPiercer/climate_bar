@@ -13,10 +13,29 @@ cd "$(dirname "$0")/.."
 VERSION="${1:-0.1}"
 CASK="packaging/homebrew/climatebar.rb"
 
-./Scripts/bundle.sh                       # builds build/ClimateBar.app
+./Scripts/bundle.sh                       # builds + signs build/ClimateBar.app
+APP=build/ClimateBar.app
+
+# Notarize when a notary profile is configured (see README); otherwise skip and
+# ship the signed-but-unnotarized app. Set up once with:
+#   xcrun notarytool store-credentials climatebar \
+#     --apple-id <id> --team-id 3DV3M49G95 --password <app-specific-password>
+if security find-generic-password -s "com.apple.gke.notary.climatebar" >/dev/null 2>&1 \
+   || xcrun notarytool history --keychain-profile climatebar >/dev/null 2>&1; then
+  NOTARIZE_ZIP="build/notarize.zip"
+  ditto -c -k --keepParent "$APP" "$NOTARIZE_ZIP"
+  echo "Submitting to notary service (this can take a few minutes)…"
+  xcrun notarytool submit "$NOTARIZE_ZIP" --keychain-profile climatebar --wait
+  xcrun stapler staple "$APP"
+  rm -f "$NOTARIZE_ZIP"
+  echo "Notarized + stapled."
+else
+  echo "No notary profile 'climatebar' — shipping signed but NOT notarized."
+fi
+
 ZIP="build/ClimateBar-$VERSION.zip"
 rm -f "$ZIP"
-ditto -c -k --keepParent build/ClimateBar.app "$ZIP"
+ditto -c -k --keepParent "$APP" "$ZIP"
 SHA=$(shasum -a 256 "$ZIP" | cut -d' ' -f1)
 
 # Update the cask in place (BSD sed).

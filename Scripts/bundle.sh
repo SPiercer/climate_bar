@@ -20,5 +20,16 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>NSLocalNetworkUsageDescription</key><string>ClimateBar talks to your air conditioners on your local network.</string>
 </dict></plist>
 PLIST
-codesign --force --sign - "$APP"
+# Sign with a Developer ID (hardened runtime, for notarized distribution) when
+# the cert is present; fall back to ad-hoc so plain dev builds still work.
+IDENTITY=$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application/{print $2; exit}')
+if [ -n "$IDENTITY" ]; then
+  codesign --force --options runtime --timestamp \
+    --entitlements packaging/ClimateBar.entitlements \
+    --sign "$IDENTITY" "$APP"
+  echo "Signed: $IDENTITY"
+else
+  codesign --force --sign - "$APP"
+  echo "Ad-hoc signed (no Developer ID cert found)"
+fi
 echo "Built $APP"

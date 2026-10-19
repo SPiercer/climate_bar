@@ -7,8 +7,8 @@
 #   brew install --cask spiercer/tap/climatebar
 #
 cask "climatebar" do
-  version "0.1"
-  sha256 "27824f824ded88acedd89e8193a249ed1ae562a3a1de1597612f31b67fc2dcb0"
+  version "0.2"
+  sha256 "dea222347094d43a09c0c64f302c294f28beee24bd9c8c0735b2c89db32fa3e1"
 
   url "https://github.com/SPiercer/climate_bar/releases/download/v#{version}/ClimateBar-#{version}.zip"
   name "ClimateBar"
@@ -18,14 +18,7 @@ cask "climatebar" do
   app "ClimateBar.app"
 
   caveats <<~EOS
-    ClimateBar is not signed with an Apple Developer ID, so the first time you
-    open it macOS will say it "cannot be verified". To open it once:
-
-      • Open your Applications folder, right-click ClimateBar, choose Open, then
-        click Open in the dialog.
-      • Or: System Settings > Privacy & Security, scroll down, click
-        "Open Anyway" next to ClimateBar.
-
-    You only have to do this once. Requires macOS 26 or newer.
+    On first connection macOS asks to let ClimateBar "find devices on your local
+    network" — click Allow, or it can't reach your ACs. Requires macOS 26+.
   EOS
 end
