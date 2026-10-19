@@ -130,7 +130,7 @@ final class MideaCloudClient {
     data["userName"] = account
     if let r = try? await request("/v1/multicloud/platform/user/route", data),
       let url = r["masUrl"] as? String, !url.isEmpty {
-      apiURL = url + "/mas/v5/app/proxy?alias="
+      apiURL = url  // masUrl already ends in /mas/v5/app/proxy?alias=
     }
   }
 

@@ -29,7 +29,12 @@ enum Discovery {
     var tv = timeval(tv_sec: 1, tv_usec: 0)
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
 
-    for port in [UInt16(6445), UInt16(20086)] { send(broadcastMsg, on: sock, port: port) }
+    // Subnet-directed broadcasts (192.168.1.255 etc.) reach ACs that routers/APs
+    // drop the global 255.255.255.255 to; keep the global one as a fallback.
+    let targets = broadcastAddrs() + [INADDR_BROADCAST]
+    for addr in targets {
+      for port in [UInt16(6445), UInt16(20086)] { send(broadcastMsg, to: addr, on: sock, port: port) }
+    }
 
     var found: [UInt64: DiscoveredAC] = [:]
     let deadline = Date().addingTimeInterval(timeout)
@@ -49,11 +54,31 @@ enum Discovery {
     return Array(found.values)
   }
 
-  private static func send(_ bytes: [UInt8], on sock: Int32, port: UInt16) {
+  /// IPv4 subnet broadcast address of every up, non-loopback interface (network byte order).
+  private static func broadcastAddrs() -> [in_addr_t] {
+    var out: [in_addr_t] = []
+    var ifap: UnsafeMutablePointer<ifaddrs>?
+    guard getifaddrs(&ifap) == 0 else { return out }
+    defer { freeifaddrs(ifap) }
+    var p = ifap
+    while let cur = p {
+      defer { p = cur.pointee.ifa_next }
+      let flags = Int32(cur.pointee.ifa_flags)
+      guard flags & IFF_UP != 0, flags & IFF_BROADCAST != 0, flags & IFF_LOOPBACK == 0,
+        let sa = cur.pointee.ifa_addr, sa.pointee.sa_family == sa_family_t(AF_INET),
+        let nm = cur.pointee.ifa_netmask else { continue }
+      let ip = sa.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee.sin_addr.s_addr }
+      let mask = nm.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee.sin_addr.s_addr }
+      out.append((ip & mask) | ~mask)  // already network byte order
+    }
+    return out
+  }
+
+  private static func send(_ bytes: [UInt8], to target: in_addr_t, on sock: Int32, port: UInt16) {
     var addr = sockaddr_in()
     addr.sin_family = sa_family_t(AF_INET)
     addr.sin_port = port.bigEndian
-    addr.sin_addr.s_addr = INADDR_BROADCAST  // 255.255.255.255
+    addr.sin_addr.s_addr = target
     _ = withUnsafePointer(to: &addr) {
       $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa in
         bytes.withUnsafeBytes { sendto(sock, $0.baseAddress, bytes.count, 0, sa, socklen_t(MemoryLayout<sockaddr_in>.size)) }
