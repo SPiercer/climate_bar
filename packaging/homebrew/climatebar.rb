@@ -8,7 +8,7 @@
 #
 cask "climatebar" do
   version "0.1"
-  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+  sha256 "27824f824ded88acedd89e8193a249ed1ae562a3a1de1597612f31b67fc2dcb0"
 
   url "https://github.com/SPiercer/climate_bar/releases/download/v#{version}/ClimateBar-#{version}.zip"
   name "ClimateBar"
