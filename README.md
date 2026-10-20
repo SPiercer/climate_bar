@@ -2,6 +2,8 @@
   <img src="docs/icon.png" width="128" alt="ClimateBar icon">
   <h1>ClimateBar</h1>
   <p>Control your Midea air conditioners from the macOS menu bar — over your local network.</p>
+  <img width="401" height="661" alt="image" src="https://github.com/user-attachments/assets/87ad9c4e-7eed-4a96-bad9-56cedee5f19e" />
+
 </div>
 
 ClimateBar speaks the Midea V3 LAN protocol directly (ported from
