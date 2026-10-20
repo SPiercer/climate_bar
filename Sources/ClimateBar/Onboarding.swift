@@ -98,6 +98,6 @@ struct OnboardingView: View {
     .textFieldStyle(.roundedBorder)
     .padding(16)
     .frame(width: 340)
-    .glassEffect(.clear, in: .rect(cornerRadius: 14))
+    .panelGlass(in: .rect(cornerRadius: 14))
   }
 }

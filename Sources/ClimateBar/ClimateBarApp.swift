@@ -159,7 +159,7 @@ struct PanelView: View {
     .padding(14)
     .frame(width: 380)
     // Our own glass instead of the system panel material, tinted by the target temperature.
-    .glassEffect(.clear.tint(temperatureTint(store.current)), in: .rect(cornerRadius: 18))
+    .panelGlass(in: .rect(cornerRadius: 18), tint: temperatureTint(store.current))
     .animation(.smooth(duration: 0.6), value: store.current.target)
     .animation(.smooth(duration: 0.6), value: store.current.on)
     .containerBackground(.clear, for: .window)
@@ -214,7 +214,7 @@ struct PanelView: View {
     _ options: [Option], selected current: Option, id: String,
     select: @escaping (Option) -> Void, @ViewBuilder label: @escaping (Option) -> Label
   ) -> some View {
-    GlassEffectContainer {
+    GlassBox {
       HStack(spacing: 2) {
         ForEach(options, id: \.self) { option in
           Button {
@@ -226,9 +226,7 @@ struct PanelView: View {
               .contentShape(.capsule)
               .background {
                 if option == current {
-                  Color.clear
-                    .glassEffect(.clear.interactive(), in: .capsule)
-                    .glassEffectID(id, in: glass)
+                  Color.clear.pillGlass(id: id, in: glass)
                 }
               }
           }
@@ -236,7 +234,7 @@ struct PanelView: View {
         }
       }
       .padding(3)
-      .glassEffect(.clear, in: .capsule)
+      .panelGlass(in: .capsule)
     }
   }
 
@@ -263,7 +261,7 @@ struct PanelView: View {
       .opacity(ac.on ? 1 : 0.4)
     }
     .padding(16)
-    .glassEffect(.clear, in: .rect(cornerRadius: 14))
+    .panelGlass(in: .rect(cornerRadius: 14))
     .disabled(ac.online != true)
   }
 
@@ -279,6 +277,6 @@ struct PanelView: View {
         .contentShape(.circle)
     }
     .buttonStyle(.plain)
-    .glassEffect(ac.on ? .clear.tint(.white).interactive() : .clear.interactive(), in: .circle)
+    .panelGlass(in: .circle, tint: ac.on ? .white : nil, interactive: true)
   }
 }

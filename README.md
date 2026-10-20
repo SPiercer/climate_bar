@@ -50,8 +50,16 @@ your ACs.
 
 ## Requirements
 
-- macOS 26+ (the panel uses Liquid Glass)
+- macOS 15+ (on macOS 26 the panel is Liquid Glass; below that it's a frosted material)
 - Your ACs on the same LAN as your Mac, already paired in the MSmartHome app
+
+## Roadmap
+
+- [ ] Heat / dry / fan-only modes (currently cool-only)
+- [ ] Schedules — "off at 2am", "on before I'm home"
+- [ ] Rename an AC in-app (override the cloud's label)
+- [ ] MCP server for agentic control
+- [ ] Sleep / eco presets
 
 ## Build from source
 
@@ -66,20 +74,6 @@ open build/ClimateBar.app
 
 Other scripts: `Scripts/release.sh <version>` cuts a signed+notarized release and
 updates the Homebrew cask; `Scripts/make_icon.sh` regenerates the app icon.
-
-## Command-line tools (optional, Python)
-
-Power-user scripts that reuse the same local protocol and `devices.json`. Run
-them with a Python that has [`midealocal`](https://pypi.org/project/midea-local/)
-installed (`pipx install midea-local`):
-
-| Tool | Does |
-|------|------|
-| `ac.py list` | Show each AC and its state |
-| `ac.py on\|off <ac>` | Power an AC on/off (`<ac>` is a number, IP, or `all`) |
-| `ac.py temp 24 <ac>` | Set target temperature |
-| `ac_direct.py <ip> on\|off\|26` | Send a single raw command to one AC by IP |
-| `ac_setup.py` | Generate `devices.json` from the terminal instead of the in-app login |
 
 ## Credits
 

@@ -7,8 +7,8 @@
 #   brew install --cask spiercer/tap/climatebar
 #
 cask "climatebar" do
-  version "0.3"
-  sha256 "075de565ab62858d597ff812d0ee45512e66debfaa874a193d774d290558f39e"
+  version "0.4"
+  sha256 "0153a9da21ae998da1b742fac4d11296a9c0198a3e7d6a89665726b7dd42b10a"
 
   url "https://github.com/SPiercer/climate_bar/releases/download/v#{version}/ClimateBar-#{version}.zip"
   name "ClimateBar"
@@ -19,6 +19,6 @@ cask "climatebar" do
 
   caveats <<~EOS
     On first connection macOS asks to let ClimateBar "find devices on your local
-    network" — click Allow, or it can't reach your ACs. Requires macOS 26+.
+    network" — click Allow, or it can't reach your ACs. Requires macOS 15+.
   EOS
 end

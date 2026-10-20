@@ -19,7 +19,7 @@ struct ThermostatDial: View {
       let radius = RingArc.radius(in: geo.size)
       ZStack {
         // Glass track.
-        Color.clear.glassEffect(.clear, in: RingArc(start: Self.start, sweep: Self.sweep, width: 22))
+        Color.clear.panelGlass(in: RingArc(start: Self.start, sweep: Self.sweep, width: 22))
         // Set range, coloured from icy blue to warm amber.
         RingArc(start: Self.start, sweep: Self.sweep * fraction, width: 8)
           .fill(AngularGradient(
@@ -28,7 +28,7 @@ struct ThermostatDial: View {
         // Knob.
         Color.clear
           .frame(width: 26, height: 26)
-          .glassEffect(.clear.interactive(), in: .circle)
+          .panelGlass(in: .circle, interactive: true)
           .position(point(at: Self.start + Self.sweep * fraction, radius: radius, center: center))
         // Readout.
         VStack(spacing: 2) {
@@ -71,7 +71,7 @@ struct ThermostatDial: View {
       Image(systemName: symbol).frame(width: 30, height: 30).contentShape(.circle)
     }
     .buttonStyle(.plain)
-    .glassEffect(.clear.interactive(), in: .circle)
+    .panelGlass(in: .circle, interactive: true)
   }
 
   private func point(at degrees: Double, radius: CGFloat, center: CGPoint) -> CGPoint {

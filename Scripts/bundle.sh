@@ -16,8 +16,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleName</key><string>ClimateBar</string>
   <key>CFBundleIconFile</key><string>ClimateBar</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>${CLIMATEBAR_VERSION:-0.3}</string>
-  <key>LSMinimumSystemVersion</key><string>26.0</string>
+  <key>CFBundleShortVersionString</key><string>${CLIMATEBAR_VERSION:-0.4}</string>
+  <key>LSMinimumSystemVersion</key><string>15.0</string>
   <key>LSUIElement</key><true/>
   <key>NSLocalNetworkUsageDescription</key><string>ClimateBar talks to your air conditioners on your local network.</string>
 </dict></plist>
